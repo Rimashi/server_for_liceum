@@ -1,0 +1,77 @@
+name: liceum
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: liceum-mongo
+    restart: unless-stopped
+
+    volumes:
+      - mongo_data:/data/db
+
+    networks:
+      - backend
+
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - db.adminCommand('ping').ok
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: liceum-app
+    restart: unless-stopped
+
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+    env_file:
+      - .env
+
+    environment:
+      PORT: 3000
+      MONGO_URL: mongodb://mongo:27017/liceum-app
+
+    volumes:
+      - user_files:/app/files_from_users
+      - parse_files:/app/files_to_parse
+
+    networks:
+      - backend
+      - proxy
+
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+
+      - traefik.http.routers.liceum.rule=Host(`liceum.rimashi.ru`)
+      - traefik.http.routers.liceum.entrypoints=web
+
+      - traefik.http.services.liceum.loadbalancer.server.port=3000
+
+networks:
+  backend:
+    internal: true
+
+  proxy:
+    external: true
+
+volumes:
+  mongo_data:
+    name: liceum_mongo_data
+
+  user_files:
+    name: liceum_user_files
+
+  parse_files:
+    name: liceum_parse_files

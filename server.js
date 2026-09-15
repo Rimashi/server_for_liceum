@@ -20,7 +20,7 @@ const jsonParser = express.json();
 const createPath = (page) => path.resolve(__dirname, 'views', `${page}.ejs`);
 
 const port = process.env.PORT || 3000;
-const url = 'mongodb://127.0.0.1:27017/liceum-app';
+const url = process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/liceum-app';
 
 //установка движков и прочее--------------------------------------------------------------------------------------------
 
